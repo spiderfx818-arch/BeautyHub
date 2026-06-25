@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    // Safeguard against platform or wrapper code overriding read-only window.fetch
+    (function() {
+      const originalFetch = window.fetch;
+      let currentFetch = originalFetch;
+      try {
+        Object.defineProperty(window, 'fetch', {
+          get() { return currentFetch; },
+          set(val) { currentFetch = val; },
+          configurable: true,
+          enumerable: true
+        });
+      } catch (e) {
+        console.warn("Redefine fetch descriptor fallback aborted:", e);
+      }
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Product | BeautyHub Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <id id="admin-add-product-page-identifier"></id>
+</head>
+<body>
+
+  <!-- HEADER NAVIGATION -->
+  <header>
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <span>★</span> BEAUTY<span>HUB</span> <small style="font-size:10px; font-weight:700; background:var(--accent); color:white; padding:2px 6px; border-radius:3px; vertical-align:middle; margin-left:6px;">ADMIN</small>
+      </a>
+      <nav class="nav-links">
+        <a href="/">Go to shop</a>
+        <a href="/admin/dashboard" class="active">Management</a>
+      </nav>
+      <div class="nav-actions">
+        <div id="header-user-container">
+          <div class="loader-spinner" style="width:16px; height:16px; margin:0;"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENT FORM SECTION -->
+  <main class="admin-container">
+    <div style="margin-bottom:30px;">
+      <a href="/admin/dashboard.html" style="font-size:13px; font-weight:600; text-transform:uppercase; color:var(--text-gray); display:flex; align-items:center; gap:8px;">
+        <svg style="width:16px; height:16px; fill:currentColor" viewBox="0 0 24 24"><path d="M11.67 3.87L9.9 2.1 0 12l9.9 9.9 1.77-1.77L3.54 12z"/></svg>
+        Cancel and return to dashboard
+      </a>
+    </div>
+
+    <div class="admin-form-card">
+      <h2 class="brand-font" style="font-size:32px; margin-bottom:12px; color:var(--text-dark); text-align:center;">Register Premium Cosmetics</h2>
+      <p style="text-align:center; color:var(--text-gray); font-size:14px; margin-bottom:12px;">Input specifications to add a new product item to the BeautyHub catalog.</p>
+      <p style="text-align:center; color:var(--accent); font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:1px; margin-bottom:32px;">* Unique sequential Product Number will be auto-generated.</p>
+
+      <form id="admin-add-product-form">
+        
+        <div class="form-group">
+          <label for="name">Product Title Name *</label>
+          <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Lavender Hydrating Botanical Mask" required />
+        </div>
+
+        <div class="form-group">
+          <label for="category">Category Classification *</label>
+          <select id="category" name="category" class="form-control" required>
+            <option value="" disabled selected>Select category...</option>
+            <option value="Skincare">Skincare</option>
+            <option value="Makeup">Makeup</option>
+            <option value="Haircare">Haircare</option>
+            <option value="Perfume">Perfume</option>
+          </select>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+  <div class="form-group">
+    <label for="price">Retail Price *</label>
+    <input type="number" id="price" name="price" class="form-control" placeholder="e.g. 45.00" step="0.01" min="0.01" required />
+  </div>
+
+  <div class="form-group">
+    <label for="currency">Currency *</label>
+    <select id="currency" name="currency" class="form-control" required>
+      <option value="USD">USD ($)</option>
+      <option value="INR">INR (₹)</option>
+      <option value="BDT">BDT (৳)</option>
+      <option value="EUR">EUR (€)</option>
+      <option value="GBP">GBP (£)</option>
+    </select>
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="stock">Inventory Stock Count *</label>
+  <input type="number" id="stock" name="stock" class="form-control" value="10" min="0" required />
+</div>
+
+<div class="form-group">
+  <label for="buy_link">Buy Now Link</label>
+  <input
+    type="url"
+    id="buy_link"
+    name="buy_link"
+    class="form-control"
+    placeholder="https://example.com/product-page"
+  />
+</div>
+
+        <div class="form-group">
+          <label for="description">Exquisite Product Description</label>
+          <textarea id="description" name="description" class="form-control" placeholder="Write ingredients notes, fragrance families, or hydrator methods..."></textarea>
+        </div>
+
+        <!-- IMAGE SELECTOR SECTION -->
+        <div class="form-group">
+          <label>Product Photography Content</label>
+          <div class="image-upload-wrapper">
+            
+            <img id="product-image-preview" src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=200" alt="Product Preview" class="upload-preview">
+            
+            <!-- Drag&Drop Upload Zone -->
+            <div class="upload-zone" id="upload-dropzone">
+              <svg style="width:32px; height:32px; margin:0 auto; fill:var(--text-light);" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+              <p>Drag and drop image here or <strong>browse file</strong></p>
+              <input type="file" id="product-file-input" class="input-file-hidden" accept="image/*">
+            </div>
+
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="product-image-url-input">Direct Image Source URL (Or uploaded pathname)</label>
+          <input type="text" id="product-image-url-input" name="image_url" class="form-control" placeholder="https://images.unsplash.com/your-image.jpg" />
+        </div>
+
+        <button type="submit" class="btn-admin" style="width:100%; padding:15px; text-align:center; justify-content:center; font-size:14px; margin-top:10px;">
+          PUBLISH PRODUCT
+        </button>
+
+      </form>
+    </div>
+  </main>
+
+  <!-- LUXURY FOOTER -->
+  <footer>
+    <div style="max-width:1200px; margin:0 auto;">
+      <p style="font-size:12px; color:var(--text-light); text-align:center;">&copy; 2026 Admin Portal. Secure API Active.</p>
+    </div>
+  </footer>
+
+  <!-- SCRIPTS -->
+  <script src="/js/cart.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    // Safeguard against platform or wrapper code overriding read-only window.fetch
+    (function() {
+      const originalFetch = window.fetch;
+      let currentFetch = originalFetch;
+      try {
+        Object.defineProperty(window, 'fetch', {
+          get() { return currentFetch; },
+          set(val) { currentFetch = val; },
+          configurable: true,
+          enumerable: true
+        });
+      } catch (e) {
+        console.warn("Redefine fetch descriptor fallback aborted:", e);
+      }
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | BeautyHub</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/admin.css">
+  <style>
+    /* Admin dashboard layout tabs styling */
+    .admin-sub-sections {
+      display: none;
+    }
+    .admin-sub-sections.active {
+      display: block;
+    }
+  </style>
+  <id id="admin-dashboard-page-identifier"></id>
+</head>
+<body>
+
+  <!-- HEADER NAVIGATION -->
+  <header>
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <span>★</span> BEAUTY<span>HUB</span> <small style="font-size:10px; font-weight:700; background:var(--accent); color:white; padding:2px 6px; border-radius:3px; vertical-align:middle; margin-left:6px;">ADMIN</small>
+      </a>
+      <nav class="nav-links">
+        <a href="/">Go to shop</a>
+        <a href="/admin/dashboard" class="active">Management</a>
+      </nav>
+      <div class="nav-actions">
+        <div id="header-user-container">
+          <!-- Loaded dynamically -->
+          <div class="loader-spinner" style="width:16px; height:16px; margin:0;"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ADMIN TITLE SECTION -->
+  <main class="admin-container">
+    <div class="admin-header">
+      <div class="admin-title-desc">
+        <h1>Administrative Hub</h1>
+        <p>Analyze business telemetry, adjust master cosmetics inventories, track orders, and monitor active users.</p>
+      </div>
+      <div class="admin-actions">
+        <a href="/admin/add_product" class="btn-admin" id="btn-add-product">
+          <svg style="width:16px; height:16px; fill:currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          ADD PRODUCT
+        </a>
+      </div>
+    </div>
+
+    <!-- BENTO STATISTICS GRID -->
+    <section class="stats-grid">
+      
+      <div class="stat-card">
+        <span class="stat-card-title">Total Products</span>
+        <span class="stat-card-v" id="admin-stats-p-count">0</span>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-card-title">Total stock Units</span>
+        <span class="stat-card-v" id="admin-stats-stock">0</span>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-card-title">Completed Sales</span>
+        <span class="stat-card-v" id="admin-stats-sales">$0.00</span>
+      </div>
+
+      <div class="stat-card">
+        <span class="stat-card-title">Registered Users</span>
+        <span class="stat-card-v" id="admin-stats-u-count">0</span>
+      </div>
+
+    </section>
+
+    <!-- ADMIN SWITCH NAVIGATION -->
+    <section class="admin-tabs">
+      <button class="admin-tab-btn active" data-target="admin-sec-products">Products Grid</button>
+      <button class="admin-tab-btn" data-target="admin-sec-users">Users List</button>
+      <button class="admin-tab-btn" data-target="admin-sec-orders">Orders List</button>
+    </section>
+
+    <!-- SECTION 1: PRODUCTS INVENTORIES -->
+    <section id="admin-sec-products" class="admin-sub-sections active">
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Product Number</th>
+              <th>Product Details</th>
+              <th>Category</th>
+              <th>Unit Retail Price</th>
+              <th>Stock Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-products-table-tbody">
+            <!-- Loaded dynamically by admin.js -->
+            <tr><td colspan="5" style="text-align:center;"><div class="loader-spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 2: USERS LIST -->
+    <section id="admin-sec-users" class="admin-sub-sections">
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Profile User</th>
+              <th>Email Address</th>
+              <th>OAuth Identifier ID</th>
+              <th>Privilege Access</th>
+            </tr>
+          </thead>
+          <tbody id="admin-users-table-tbody">
+            <!-- Loaded dynamically by admin.js -->
+            <tr><td colspan="4" style="text-align:center;"><div class="loader-spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 3: ORDERS LIST -->
+    <section id="admin-sec-orders" class="admin-sub-sections">
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Placed By</th>
+              <th>Date Stamp</th>
+              <th>Total Value</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="admin-orders-table-tbody">
+            <!-- Loaded dynamically by admin.js -->
+            <tr><td colspan="5" style="text-align:center;"><div class="loader-spinner"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- LUXURY FOOTER -->
+  <footer>
+    <div style="max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center;">
+      <h2>★ BEAUTY<span>HUB</span> ADMIN</h2>
+      <p style="font-size:12px; color:var(--text-light);">&copy; 2026 Admin Portal. Secure API Active.</p>
+    </div>
+  </footer>
+
+  <!-- SUB TABS INTERACTIVE MECHANISM script -->
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const tabs = document.querySelectorAll(".admin-tab-btn");
+      const subSections = document.querySelectorAll(".admin-sub-sections");
+
+      tabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+          tabs.forEach(t => t.classList.remove("active"));
+          subSections.forEach(s => s.classList.remove("active"));
+
+          tab.classList.add("active");
+          const targetId = tab.getAttribute("data-target");
+          const targetSection = document.getElementById(targetId);
+          if (targetSection) targetSection.classList.add("active");
+        });
+      });
+    });
+  </script>
+
+  <!-- SCRIPTS -->
+  <script src="/js/cart.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

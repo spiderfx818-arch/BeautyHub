@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    // Safeguard against platform or wrapper code overriding read-only window.fetch
+    (function() {
+      const originalFetch = window.fetch;
+      let currentFetch = originalFetch;
+      try {
+        Object.defineProperty(window, 'fetch', {
+          get() { return currentFetch; },
+          set(val) { currentFetch = val; },
+          configurable: true,
+          enumerable: true
+        });
+      } catch (e) {
+        console.warn("Redefine fetch descriptor fallback aborted:", e);
+      }
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Beauty Bag | BeautyHub</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Cart page specifics */
+    .cart-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 40px;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 24px 80px;
+    }
+    .cart-list-card {
+      background-color: white;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 30px;
+      box-shadow: var(--shadow-sm);
+    }
+    .cart-item-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .cart-item-row:first-child {
+      padding-top: 0;
+    }
+    .cart-item-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .cart-item-img {
+      width: 90px;
+      height: 110px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+    }
+    .cart-item-info {
+      flex-grow: 1;
+    }
+    .cart-item-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 6px;
+    }
+    .cart-item-category {
+      font-size: 11px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--text-light);
+      margin-bottom: 12px;
+    }
+    .cart-qty-ctrls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .cart-item-price-col {
+      text-align: right;
+    }
+    .cart-item-subtotal {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 8px;
+    }
+    .cart-item-unitprice {
+      font-size: 13px;
+      color: var(--text-gray);
+    }
+    .summary-box {
+      background-color: white;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow-sm);
+      height: fit-content;
+      position: sticky;
+      top: 100px;
+    }
+    .summary-heading {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 16px;
+    }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      font-size: 14px;
+      color: var(--text-gray);
+    }
+    .summary-total-row {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid var(--border-color);
+      margin-top: 20px;
+      padding-top: 20px;
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-dark);
+    }
+    @media (max-width: 850px) {
+      .cart-layout {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+    }
+  </style>
+  <id id="cart-page-identifier"></id>
+</head>
+<body>
+
+  <!-- HEADER NAVIGATION -->
+  <header>
+    <div class="nav-container">
+      <a href="/" class="logo">
+        <span>❤</span> BEAUTY<span>HUB</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/">Home</a>
+        <a href="/products.html">Shop All</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="/cart.html" class="cart-btn active" title="Shopping Bag">
+          <svg style="width:22px; height:22px; fill:currentColor" viewBox="0 0 24 24"><path d="M17.21 9l-4.3-6.45c-.2-.29-.53-.45-.88-.45-.35 0-.68.16-.88.45L6.85 9H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-2.79zM12 4.4L15.07 9H8.93L12 4.4zM20 19H4v-8h16v8zm-8-2c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3z"/></svg>
+          <span class="cart-count" id="cart-badge">0</span>
+        </a>
+        <div id="header-user-container">
+          <div class="loader-spinner" style="width:16px; height:16px; margin:0;"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CART CONTAINER -->
+  <main class="main-content" style="max-width:1200px; margin:40px auto; padding:0 24px;">
+    <h1 class="brand-font" style="font-size:38px; margin-bottom:30px;">Your Beauty Bag</h1>
+    
+    <div class="cart-layout">
+      
+      <!-- Left: Cart Items List -->
+      <div class="cart-list-card" id="cart-items-container">
+        <div class="loader-spinner"></div>
+        <!-- Loaded by script here -->
+      </div>
+
+      <!-- Right: Summary Sidebar -->
+      <div class="summary-box" id="cart-summary-sidebar" style="display:none;">
+        <h3 class="summary-heading">Order Summary</h3>
+        <div class="summary-row">
+          <span>Bag Subtotal</span>
+          <span id="sum-subtotal">$0.00</span>
+        </div>
+        <div class="summary-row">
+          <span>Luxury Shipping</span>
+          <span style="color:#059669; font-weight:600;">FREE</span>
+        </div>
+        <div class="summary-row">
+          <span>Estimated Taxes</span>
+          <span id="sum-tax">$0.00</span>
+        </div>
+        
+        <div class="summary-total-row">
+          <span>Total</span>
+          <span id="sum-total">$0.00</span>
+        </div>
+
+        <button class="btn-primary" id="btn-checkout-trigger" style="width:100%; padding:15px; border-radius:var(--radius); margin-top:30px; font-size:13px; font-weight:700;">
+          PROCEED TO CHECKOUT
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- LUXURY FOOTER -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <h2>❤ BEAUTY<span>HUB</span></h2>
+        <p>Premium curation of exquisite makeup, holistic skincare hydrators, rejuvenating haircare masks, and luxurious scent formulations.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- DYNAMIC RENDERING INTERACTIVE SCRIPT -->
+  <script>
+    async function renderCart() {
+      const container = document.getElementById("cart-items-container");
+      const summaryBox = document.getElementById("cart-summary-sidebar");
+      if (!container) return;
+
+      const items = await fetchCart();
+
+      if (items.length === 0) {
+        summaryBox.style.display = "none";
+        container.innerHTML = `
+          <div style="text-align: center; padding: 60px 20px; color: var(--text-gray);">
+            <svg style="width:68px; height:68px; fill:var(--border-color); margin-bottom:20px;" viewBox="0 0 24 24"><path d="M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-1.99.9-1.99 2L3 20c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm0 10c-2.76 0-5-2.24-5-5h2c0 1.66 1.34 3 3 3s3-1.34 3-3h2c0 2.76-2.24 5-5 5z"/></svg>
+            <h3 style="font-size:22px; margin-bottom:12px; color:var(--text-dark);">Your beauty bag is currently empty</h3>
+            <p style="font-size:14px; margin-bottom:24px;">Explore our cosmetics and skincare hydrators to add products.</p>
+            <a href="/products.html" class="btn-primary" style="display:inline-block; padding:12px 24px; font-size:12px;">Discover Products</a>
+          </div>
+        `;
+        return;
+      }
+
+      summaryBox.style.display = "block";
+      container.innerHTML = "";
+
+      let subtotal = 0;
+
+      items.forEach((item) => {
+        const itemTotal = item.price * item.quantity;
+        subtotal += itemTotal;
+
+        const row = document.createElement("div");
+        row.className = "cart-item-row";
+        row.innerHTML = `
+          <img src="${item.image_url || 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=200'}" alt="${item.name}" class="cart-item-img">
+          <div class="cart-item-info">
+            <span class="cart-item-category" style="display: flex; align-items: center; gap: 6px;">
+              ${item.category}
+              ${item.product_number ? `<span class="product-number-badge" style="background-color: var(--primary); color: white; font-family: var(--font-mono); font-size: 9px; font-weight: 500; padding: 1px 4px; border-radius: 2px;">#${item.product_number}</span>` : ''}
+            </span>
+            <h4 class="cart-item-title"><a href="/product_detail.html?id=${item.product_id}">${item.name}</a></h4>
+            
+            <div class="cart-qty-ctrls">
+              <button class="qty-btn" style="width:28px; height:28px; font-size:12px;" onclick="adjustQuantity(${item.product_id}, -1)">-</button>
+              <span style="font-family:var(--font-mono); font-size:14px; font-weight:600; width:16px; text-align:center;">${item.quantity}</span>
+              <button class="qty-btn" style="width:28px; height:28px; font-size:12px;" onclick="adjustQuantity(${item.product_id}, 1)">+</button>
+              
+              <button style="font-size:12px; color:var(--text-light); text-transform:uppercase; margin-left:14px; font-weight:600;" onclick="adjustQuantity(${item.product_id}, 'all')">Remove</button>
+            </div>
+          </div>
+          <div class="cart-item-price-col">
+            <div class="cart-item-subtotal">$${itemTotal.toFixed(2)}</div>
+            <div class="cart-item-unitprice">$${item.price.toFixed(2)} each</div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      // Calculate totals
+      const taxRate = 0.08; // 8% tax
+      const tax = subtotal * taxRate;
+      const total = subtotal + tax;
+
+      document.getElementById("sum-subtotal").textContent = `$${subtotal.toFixed(2)}`;
+      document.getElementById("sum-tax").textContent = `$${tax.toFixed(2)}`;
+      document.getElementById("sum-total").textContent = `$${total.toFixed(2)}`;
+    }
+
+    async function adjustQuantity(productId, direction) {
+      if (direction === 'all') {
+        await removeFromCart(productId, true);
+      } else if (direction === -1) {
+        await removeFromCart(productId, false);
+      } else {
+        await addToCart(productId, 1);
+      }
+    }
+
+    // Checkout event handler
+    document.getElementById("btn-checkout-trigger").addEventListener("click", () => {
+      // Prompt standard sign-in if guest user
+      if (!currentUser) {
+        alert("Please Sign In via your account to complete checkouts!");
+        window.location.href = "/login.html";
+        return;
+      }
+      
+      // Simulate database Order submissions
+      // Let's clear the cart and congratulate!
+      alert("🎉 ORDER PLACED SUCCESSFULLY! Your luxury beauty order is on its way. Thank you for choosing BeautyHub!");
+      
+      // Clear sessions-based carts
+      fetch("/api/cart", { method: "GET" }) // trigger sync 
+        .then(() => {
+          // Clear current cart row entries by looping and calling delete
+          return fetch("/api/cart");
+        })
+        .then(res => res.json())
+        .then(async items => {
+          for (let item of items) {
+            await removeFromCart(item.product_id, true);
+          }
+          renderCart();
+        });
+    });
+
+    // Re-render when cart state flags shift
+    window.addEventListener("cartUpdated", () => renderCart());
+    window.addEventListener("authStateChanged", () => renderCart());
+
+    // Call renderCart initially on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      renderCart();
+    });
+  </script>
+
+  <!-- SCRIPTS -->
+  <script src="/js/cart.js"></script>
+  <script src="/js/auth.js"></script>
+</body>
+</html>

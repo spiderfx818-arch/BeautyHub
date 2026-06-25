@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    // Safeguard against platform or wrapper code overriding read-only window.fetch
+    (function() {
+      const originalFetch = window.fetch;
+      let currentFetch = originalFetch;
+      try {
+        Object.defineProperty(window, 'fetch', {
+          get() { return currentFetch; },
+          set(val) { currentFetch = val; },
+          configurable: true,
+          enumerable: true
+        });
+      } catch (e) {
+        console.warn("Redefine fetch descriptor fallback aborted:", e);
+      }
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BeautyHub | Premium Beauty & Skincare Essence</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <id id="index-page-identifier"></id>
+</head>
+<body>
+
+  <!-- HEADER NAVIGATION -->
+  <header>
+    <div class="nav-container">
+      <a href="/" class="logo" id="header-logo">
+        <span>❤</span> BEAUTY<span>HUB</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/" class="active" id="nav-home">Home</a>
+        <a href="/products.html" id="nav-shop">Shop All</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="/cart.html" class="cart-btn" id="nav-cart-btn" title="Shopping Bag">
+          <svg style="width:22px; height:22px; fill:currentColor" viewBox="0 0 24 24"><path d="M17.21 9l-4.3-6.45c-.2-.29-.53-.45-.88-.45-.35 0-.68.16-.88.45L6.85 9H4c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-8c0-1.1-.9-2-2-2h-2.79zM12 4.4L15.07 9H8.93L12 4.4zM20 19H4v-8h16v8zm-8-2c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3z"/></svg>
+          <span class="cart-count" id="cart-badge">0</span>
+        </a>
+        <div id="header-user-container">
+          <!-- Populated dynamically by auth.js -->
+          <div class="loader-spinner" style="width:16px; height:16px; margin:0;"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SLIDE BANNER -->
+  <section class="hero" id="hero-banner">
+    <div class="hero-content">
+      <span class="hero-subtitle">The Summer Radiant Collection</span>
+      <h1 class="hero-title">Experience Beauty in its Purest Form</h1>
+      <p class="hero-desc">Discover our collection of clean skincare formulations and highly pigmented cosmetic solutions curated with botanicals for eternal radiance.</p>
+      <div class="hero-actions">
+        <a href="/products.html" class="btn-primary" id="hero-btn-shop">Shop Catalog</a>
+        <a href="/products.html?category=Skincare" class="btn-secondary" id="hero-btn-skincare">Glow Hydrators</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED CATEGORY PILLS -->
+  <main class="main-content" style="max-width:1200px; margin:0 auto; padding:0 24px 80px;">
+    <h2 class="section-title">Shop by Category</h2>
+    <div class="category-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:20px; margin-bottom:80px;">
+      
+      <a href="/products.html?category=Skincare" class="category-card" style="background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400'); background-size:cover; background-position:center; height:160px; border-radius:var(--radius); display:flex; align-items:flex-end; padding:20px; color:white; font-weight:700; text-transform:uppercase; letter-spacing:1px; box-shadow:var(--shadow-sm);">
+        Skincare
+      </a>
+      
+      <a href="/products.html?category=Makeup" class="category-card" style="background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400'); background-size:cover; background-position:center; height:160px; border-radius:var(--radius); display:flex; align-items:flex-end; padding:20px; color:white; font-weight:700; text-transform:uppercase; letter-spacing:1px; box-shadow:var(--shadow-sm);">
+        Makeup
+      </a>
+
+      <a href="/products.html?category=Haircare" class="category-card" style="background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=400'); background-size:cover; background-position:center; height:160px; border-radius:var(--radius); display:flex; align-items:flex-end; padding:20px; color:white; font-weight:700; text-transform:uppercase; letter-spacing:1px; box-shadow:var(--shadow-sm);">
+        Haircare
+      </a>
+
+      <a href="/products.html?category=Perfume" class="category-card" style="background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1541643600914-78b084683601?w=400'); background-size:cover; background-position:center; height:160px; border-radius:var(--radius); display:flex; align-items:flex-end; padding:20px; color:white; font-weight:700; text-transform:uppercase; letter-spacing:1px; box-shadow:var(--shadow-sm);">
+        Perfume
+      </a>
+
+    </div>
+
+    <!-- PRODUCTS COLLECTION SECTION -->
+    <h2 class="section-title">New Arrivals</h2>
+    <div id="products-fallback-loader" class="loader-spinner"></div>
+    <div class="product-grid" id="products-catalog-grid">
+      <!-- Generated dynamically by main.js and cart.js -->
+    </div>
+  </main>
+
+  <!-- GENERAL BEAUTY FOOTER -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <h2>❤ BEAUTY<span>HUB</span></h2>
+        <p>Premium curation of exquisite makeup, holistic skincare hydrators, rejuvenating haircare masks, and luxurious scent formulations.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Discover</h4>
+        <ul>
+          <li><a href="/products.html">All Products</a></li>
+          <li><a href="/products.html?category=Skincare">Skincare Collection</a></li>
+          <li><a href="/products.html?category=Makeup">Premium Makeup</a></li>
+        </ul>
+      </div>
+      <div class="footer-links">
+        <h4>About</h4>
+        <ul>
+          <li><a href="#">Our Radiance Story</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="footer-newsletter">
+        <h4>Newsletter</h4>
+        <p>Sign up to receive 15% off your first luxury beauty order.</p>
+        <div class="newsletter-form">
+          <input type="email" placeholder="Email Address" class="newsletter-input" id="newsletter-email">
+          <button class="newsletter-btn" id="newsletter-submit">Join</button>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 BeautyHub Inc. All rights reserved.</p>
+      <div style="display:flex; gap:16px;">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- MODULE LOAD scripts -->
+  <script src="/js/cart.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+</html>

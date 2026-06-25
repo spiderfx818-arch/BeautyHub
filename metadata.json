@@ -1,0 +1,6 @@
+{
+  "name": "BeautyHub",
+  "description": "An elegant, full-stack beauty e-commerce shop with safe Google OAuth, product catalogs, shopping cart systems, and secure administrative controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
