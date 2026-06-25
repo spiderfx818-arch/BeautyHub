@@ -10,7 +10,7 @@ auth_bp = Blueprint("auth", __name__)
 def login_google():
     """Generates the Google OAuth 2.0 Authorization URL and redirects the user."""
     # Build redirect URI
-    redirect_uri = request.host_url.rstrip("/") + "/login/callback"
+    redirect_uri = f"{Config.APP_URL}/login/callback"
     
     # Standard Google OAuth 2.0 authorization endpoint
     auth_url = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -41,7 +41,7 @@ def login_callback():
     if not code:
         return jsonify({"error": "No authorization code provided"}), 400
         
-    redirect_uri = request.host_url.rstrip("/") + "/login/callback"
+    redirect_uri = f"{Config.APP_URL}/login/callback"
     
     try:
         # Step 1: Exchange auth code for access token
