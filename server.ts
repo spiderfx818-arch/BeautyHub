@@ -344,6 +344,10 @@ app.get("/login/google", (req, res) => {
     const email = googleUser.email;
     const is_admin = ADMIN_EMAILS.includes(email);
 
+    console.log("Email From Google:", email);
+    console.log("Admin List:", ADMIN_EMAILS);
+    console.log("Is Admin:", ADMIN_EMAILS.includes(email));
+
     const db = readDB();
 
     let user = db.users.find((u: any) => u.email === email);
@@ -374,6 +378,8 @@ writeDB(db);
       profile_image: user.profile_image,
       is_admin: user.is_admin
     };
+
+    console.log("ADMIN CHECK:", email, is_admin);
 
     return res.redirect("/");
 
