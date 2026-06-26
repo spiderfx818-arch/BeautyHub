@@ -2,10 +2,10 @@ import express from "express";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import path from "path";
-import { pool } from "./db";
 import dotenv from "dotenv";
 import axios from "axios";
 import fs from "fs";
+import pg from "pg";
 
 
 // Augment express-session types for strict TypeScript checks
@@ -57,28 +57,6 @@ async function initDatabase() {
   } catch (err) {
     console.error("Database Init Error:", err);
   }
-}
-
-const app = express();
-const PORT = 3000;
-async function initDatabase() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS products (
-      id SERIAL PRIMARY KEY,
-      product_number INT,
-      name TEXT,
-      description TEXT,
-      price REAL,
-      category TEXT,
-      image_url TEXT,
-      stock INT,
-      buy_link TEXT,
-      currency TEXT,
-      created_at TIMESTAMP DEFAULT NOW()
-    );
-  `);
-
-  console.log("✅ PostgreSQL Ready");
 }
 
 // Set up cookies and JSON parsing parameters
@@ -430,8 +408,7 @@ app.get("/api/products", async (req, res) => {
     console.error(err);
     res.status(500).json({ error: "Database Error" });
   }
-});
-  }
+}); 
 
   // Sort descending by ID so newly added items show first
   results = [...results].sort((a: any, b: any) => b.id - a.id);
