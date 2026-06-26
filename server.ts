@@ -108,6 +108,7 @@ const DB_FILE = path.join(process.cwd(), "backend", "express_database.json");
 // Define Whitelist of Administrator Email addresses
 const ADMIN_EMAILS = [
   "sff6214@gmail.com",
+  "spiderfx818@gmail.com",
   "admin@beautyhub.com",
   "beautyhub.admin@gmail.com"
 ];
