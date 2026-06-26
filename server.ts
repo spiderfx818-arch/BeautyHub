@@ -2,9 +2,10 @@ import express from "express";
 import session from "express-session";
 import cookieParser from "cookie-parser";
 import path from "path";
-import fs from "fs";
+import { pool } from "./db";
 import dotenv from "dotenv";
 import axios from "axios";
+import fs from "fs";
 
 
 // Augment express-session types for strict TypeScript checks
@@ -25,8 +26,60 @@ declare module 'express-session' {
 dotenv.config();
 console.log("CLIENT ID =", process.env.GOOGLE_CLIENT_ID);
 
+const { Pool } = pg;
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
+
+async function initDatabase() {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS products (
+        id SERIAL PRIMARY KEY,
+        product_number INTEGER UNIQUE,
+        name TEXT NOT NULL,
+        description TEXT,
+        price NUMERIC,
+        category TEXT,
+        image_url TEXT,
+        stock INTEGER,
+        buy_link TEXT,
+        currency TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    console.log("✅ Products table ready");
+  } catch (err) {
+    console.error("Database Init Error:", err);
+  }
+}
+
 const app = express();
 const PORT = 3000;
+async function initDatabase() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS products (
+      id SERIAL PRIMARY KEY,
+      product_number INT,
+      name TEXT,
+      description TEXT,
+      price REAL,
+      category TEXT,
+      image_url TEXT,
+      stock INT,
+      buy_link TEXT,
+      currency TEXT,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
+
+  console.log("✅ PostgreSQL Ready");
+}
 
 // Set up cookies and JSON parsing parameters
 app.use(express.json({ limit: '10mb' }));
@@ -353,28 +406,18 @@ app.get("/logout", (req, res) => {
 
 // PRODUCTS API
 // GET /api/products: Filter/search and read standard catalog items
-app.get("/api/products", (req, res) => {
-  const { category, search } = req.query;
-  const db = readDB();
-  let results = db.products;
+app.get("/api/products", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM products ORDER BY id DESC"
+    );
 
-  if (category) {
-    results = results.filter((p: any) => p.category.toLowerCase() === String(category).toLowerCase());
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database Error" });
   }
-  if (search) {
-    const searchStr = String(search).toLowerCase();
-    results = results.filter((p: any) => {
-      const serialStr = p.product_number ? String(p.product_number).toLowerCase() : "";
-      const serialBadgeStr = p.product_number ? `#${p.product_number}`.toLowerCase() : "";
-      
-      return (
-        p.name.toLowerCase().includes(searchStr) ||
-        p.description.toLowerCase().includes(searchStr) ||
-        serialStr === searchStr ||
-        serialBadgeStr === searchStr ||
-        serialStr.includes(searchStr)
-      );
-    });
+});
   }
 
   // Sort descending by ID so newly added items show first
@@ -405,86 +448,120 @@ app.get("/api/products/:id", (req, res) => {
 });
 
 // POST /api/products: Create items (Admin only)
-app.post("/api/products", reqAdmin, (req, res) => {
-  const { name, description, price, category, image_url, stock, buy_link, currency } = req.body;
-  if (!name || price === undefined || !category) {
-    return res.status(400).json({ error: "Required fields missing: name, price, category" });
+app.post("/api/products", reqAdmin, async (req, res) => {
+  try {
+    const {
+      name,
+      description,
+      price,
+      category,
+      image_url,
+      stock,
+      buy_link,
+      currency
+    } = req.body;
+
+    const result = await pool.query(
+      `
+      INSERT INTO products
+      (product_number,name,description,price,category,image_url,stock,buy_link,currency)
+      VALUES (
+        (SELECT COALESCE(MAX(product_number),0)+1 FROM products),
+        $1,$2,$3,$4,$5,$6,$7,$8
+      )
+      RETURNING *;
+      `,
+      [
+        name,
+        description,
+        price,
+        category,
+        image_url,
+        stock,
+        buy_link,
+        currency
+      ]
+    );
+
+    res.json(result.rows[0]);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database Error" });
   }
-
-  const db = readDB();
-  const nextId = db.products.reduce((max: number, p: any) => (p.id > max ? p.id : max), 0) + 1;
-  
-  // Find maximum existing product_number in the system
-  const maxProductNumber = db.products.reduce((max: number, p: any) => {
-    if (p.product_number !== undefined && p.product_number !== null) {
-      const num = parseInt(p.product_number);
-      if (num > max) return num;
-    }
-    return max;
-  }, 0);
-  
-  const nextProductNumber = maxProductNumber + 1;
-
-  const newProduct = {
-    id: nextId,
-    product_number: nextProductNumber,
-    name,
-    description: description || "",
-    price: parseFloat(price) || 0,
-    category,
-    image_url: image_url || "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=600",
-    stock: parseInt(stock) || 10,
-    buy_link: buy_link || "",
-    currency: currency || "USD",
-    created_at: new Date().toISOString()
-  };
-
-  db.products.push(newProduct);
-  writeDB(db);
-
-  res.status(201).json({ message: "Product created successfully", id: nextId, product_number: nextProductNumber });
 });
 
 // PUT /api/products/:id: Edit items (Admin only)
-app.put("/api/products/:id", reqAdmin, (req, res) => {
-  const idNum = parseInt(req.params.id);
-  const db = readDB();
-  const productIndex = db.products.findIndex((p: any) => p.id === idNum);
+app.put("/api/products/:id", reqAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
 
-  if (productIndex === -1) {
-    return res.status(404).json({ error: "Product not found" });
+    const {
+      name,
+      description,
+      price,
+      category,
+      image_url,
+      stock,
+      buy_link,
+      currency
+    } = req.body;
+
+    await pool.query(
+      `
+      UPDATE products
+      SET
+        name=$1,
+        description=$2,
+        price=$3,
+        category=$4,
+        image_url=$5,
+        stock=$6,
+        buy_link=$7,
+        currency=$8
+      WHERE id=$9
+      `,
+      [
+        name,
+        description,
+        price,
+        category,
+        image_url,
+        stock,
+        buy_link,
+        currency,
+        id
+      ]
+    );
+
+    res.json({ message: "Product updated successfully" });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Database Error" });
   }
-
-  // Preserve the existing product_number so it NEVER changes
-  const existingProductNumber = db.products[productIndex].product_number;
-
-  const updated = { ...db.products[productIndex], ...req.body };
-  updated.product_number = existingProductNumber;
-  updated.price = parseFloat(updated.price) || 0;
-  updated.stock = parseInt(updated.stock) || 0;
-  updated.buy_link = updated.buy_link || "";
-  updated.currency = updated.currency || "USD";
-
-  db.products[productIndex] = updated;
-  writeDB(db);
-
-  res.json({ message: "Product updated successfully" });
 });
 
 // DELETE /api/products/:id: Delete items (Admin only)
-app.delete("/api/products/:id", reqAdmin, (req, res) => {
-  const idNum = parseInt(req.params.id);
-  const db = readDB();
-  const index = db.products.findIndex((p: any) => p.id === idNum);
+app.delete("/api/products/:id", reqAdmin, async (req, res) => {
+  try {
+    const id = req.params.id;
 
-  if (index === -1) {
-    return res.status(404).json({ error: "Product not found" });
+    await pool.query(
+      "DELETE FROM products WHERE id=$1",
+      [id]
+    );
+
+    res.json({
+      message: "Product deleted successfully"
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Database Error"
+    });
   }
-
-  db.products.splice(index, 1);
-  writeDB(db);
-
-  res.json({ message: "Product deleted successfully" });
 });
 
 // CART API
@@ -752,6 +829,8 @@ app.get("/admin/edit_product", (req, res) => {
 // Serve frontend directory assets statically
 app.use(express.static(frontendDir));
 
-app.listen(PORT, "0.0.0.0", () => {
+initDatabase().then(() => {
+  app.listen(PORT, "0.0.0.0", async () => {
+  await initDatabase();
   console.log(`Express dev server running on port ${PORT}`);
 });
