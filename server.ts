@@ -348,18 +348,24 @@ app.get("/login/google", (req, res) => {
 
     let user = db.users.find((u: any) => u.email === email);
 
-    if (!user) {
-      user = {
-        id: googleUser.id,
-        name: googleUser.name,
-        email: googleUser.email,
-        profile_image: googleUser.picture,
-        is_admin
-      };
+if (!user) {
+  user = {
+    id: googleUser.id,
+    name: googleUser.name,
+    email: googleUser.email,
+    profile_image: googleUser.picture,
+    is_admin
+  };
 
-      db.users.push(user);
-      writeDB(db);
-    }
+  db.users.push(user);
+
+} else {
+  user.is_admin = is_admin;
+  user.name = googleUser.name;
+  user.profile_image = googleUser.picture;
+}
+
+writeDB(db);
 
     req.session.user = {
       id: user.id,
