@@ -124,7 +124,9 @@
       const gParam = new URLSearchParams(window.location.search).get("category");
       if (gParam) {
         setTimeout(() => {
-          const tabToClick = document.querySelector(`.nav-category-tab[data-category="${gParam}"]`);
+          const requestedCategory = gParam.trim().toLowerCase();
+          const tabToClick = Array.from(document.querySelectorAll(".nav-category-tab"))
+            .find((tab) => (tab.dataset.category || "").toLowerCase() === requestedCategory);
           if (tabToClick) {
             tabToClick.click();
           }

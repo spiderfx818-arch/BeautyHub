@@ -419,8 +419,15 @@ app.get("/logout", (req, res) => {
 // GET /api/products: Filter/search and read standard catalog items
 app.get("/api/products", async (req, res) => {
   try {
+    const category = typeof req.query.category === "string" ? req.query.category.trim() : "";
+    const query = category
+      ? "SELECT * FROM products WHERE LOWER(TRIM(category)) = LOWER(TRIM($1)) ORDER BY id DESC"
+      : "SELECT * FROM products ORDER BY id DESC";
+    const params = category ? [category] : [];
+
     const result = await pool.query(
-      "SELECT * FROM products ORDER BY id DESC"
+      query,
+      params
     );
 
     const results = [...(result.rows || [])]

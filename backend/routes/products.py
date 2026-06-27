@@ -26,7 +26,7 @@ def get_products():
     params = []
     
     if category:
-        query += " AND category = ?"
+        query += " AND LOWER(TRIM(category)) = LOWER(TRIM(?))"
         params.append(category)
         
     if search:
