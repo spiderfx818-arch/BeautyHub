@@ -420,10 +420,29 @@ app.get("/logout", (req, res) => {
 app.get("/api/products", async (req, res) => {
   try {
     const category = typeof req.query.category === "string" ? req.query.category.trim() : "";
-    const query = category
-      ? "SELECT * FROM products WHERE LOWER(TRIM(category)) = LOWER(TRIM($1)) ORDER BY id DESC"
-      : "SELECT * FROM products ORDER BY id DESC";
-    const params = category ? [category] : [];
+    const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+    const conditions: string[] = [];
+    const params: Array<string | number> = [];
+
+    if (category) {
+      params.push(category);
+      conditions.push(`LOWER(TRIM(category)) = LOWER(TRIM($${params.length}))`);
+    }
+
+    if (search) {
+      const productNumberMatch = search.match(/^#?(\d+)$/);
+
+      if (productNumberMatch) {
+        params.push(Number(productNumberMatch[1]));
+        conditions.push(`product_number = $${params.length}`);
+      } else {
+        params.push(`%${search}%`);
+        conditions.push(`name ILIKE $${params.length}`);
+      }
+    }
+
+    const whereClause = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
+    const query = `SELECT * FROM products${whereClause} ORDER BY id DESC`;
 
     const result = await pool.query(
       query,
