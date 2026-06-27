@@ -28,6 +28,8 @@ console.log("CLIENT ID =", process.env.GOOGLE_CLIENT_ID);
 
 const { Pool } = pg;
 
+const app = express();
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -83,13 +85,25 @@ app.use(
 // File Path of Database
 const DB_FILE = path.join(process.cwd(), "backend", "express_database.json");
 
+const normalizeEmail = (email?: string | null) => (email || "").trim().toLowerCase();
+
+const getAdminEmails = () => {
+  const configured = (process.env.ADMIN_EMAILS || "")
+    .split(",")
+    .map((item) => normalizeEmail(item))
+    .filter(Boolean);
+
+  return Array.from(new Set([
+    "sff6214@gmail.com",
+    "spiderfx818@gmail.com",
+    "admin@beautyhub.com",
+    "beautyhub.admin@gmail.com",
+    ...configured,
+  ]));
+};
+
 // Define Whitelist of Administrator Email addresses
-const ADMIN_EMAILS = [
-  "sff6214@gmail.com",
-  "spiderfx818@gmail.com",
-  "admin@beautyhub.com",
-  "beautyhub.admin@gmail.com"
-];
+const ADMIN_EMAILS = getAdminEmails();
 
 // Seed Data
 const DEFAULT_PRODUCTS = [
@@ -293,7 +307,8 @@ app.get("/login/google", (req, res) => {
       return res.send("Google authorization code not found.");
     }
 
-    const redirectUri = `${process.env.APP_URL}/login/callback`;
+    const appUrl = (process.env.APP_URL || `http://localhost:${PORT}`).replace(/\/$/, "");
+    const redirectUri = `${appUrl}/login/callback`;
 
     const tokenResponse = await axios.post(
       "https://oauth2.googleapis.com/token",
@@ -320,7 +335,12 @@ app.get("/login/google", (req, res) => {
     const googleUser = userResponse.data;
 
     const email = googleUser.email;
-    const is_admin = ADMIN_EMAILS.includes(email);
+    const cleanEmail = normalizeEmail(email);
+    const is_admin = ADMIN_EMAILS.includes(cleanEmail);
+
+    console.log("EMAIL RAW:", email);
+    console.log("EMAIL CLEAN:", cleanEmail);
+    console.log("IS ADMIN:", is_admin);
 
     console.log("Email From Google:", email);
     console.log("Admin List:", ADMIN_EMAILS);
@@ -328,26 +348,26 @@ app.get("/login/google", (req, res) => {
 
     const db = readDB();
 
-    let user = db.users.find((u: any) => u.email === email);
+    let user = db.users.find((u: any) => normalizeEmail(u.email) === cleanEmail);
 
-if (!user) {
-  user = {
-    id: googleUser.id,
-    name: googleUser.name,
-    email: googleUser.email,
-    profile_image: googleUser.picture,
-    is_admin
-  };
+    if (!user) {
+      user = {
+        id: googleUser.id,
+        name: googleUser.name,
+        email: cleanEmail,
+        profile_image: googleUser.picture,
+        is_admin
+      };
 
-  db.users.push(user);
+      db.users.push(user);
+    } else {
+      user.email = cleanEmail;
+      user.is_admin = is_admin;
+      user.name = googleUser.name;
+      user.profile_image = googleUser.picture;
+    }
 
-} else {
-  user.is_admin = is_admin;
-  user.name = googleUser.name;
-  user.profile_image = googleUser.picture;
-}
-
-writeDB(db);
+    writeDB(db);
 
     req.session.user = {
       id: user.id,
@@ -403,22 +423,19 @@ app.get("/api/products", async (req, res) => {
       "SELECT * FROM products ORDER BY id DESC"
     );
 
-    res.json(result.rows);
+    const results = [...(result.rows || [])]
+      .sort((a: any, b: any) => b.id - a.id)
+      .map((p: any) => ({
+        ...p,
+        buy_link: p.buy_link || "",
+        currency: p.currency || "USD"
+      }));
+
+    res.json(results);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Database Error" });
   }
-}); 
-
-  // Sort descending by ID so newly added items show first
-  results = [...results].sort((a: any, b: any) => b.id - a.id);
-  results = results.map((p: any) => ({
-  ...p,
-  buy_link: p.buy_link || "",
-  currency: p.currency || "USD"
-}));  
-
-  res.json(results);
 });
 
 // GET /api/products/:id: Load specific detail pages
@@ -819,8 +836,11 @@ app.get("/admin/edit_product", (req, res) => {
 // Serve frontend directory assets statically
 app.use(express.static(frontendDir));
 
+const PORT = Number(process.env.PORT) || 3000;
+
 initDatabase().then(() => {
   app.listen(PORT, "0.0.0.0", async () => {
-  await initDatabase();
-  console.log(`Express dev server running on port ${PORT}`);
+    await initDatabase();
+    console.log(`Express dev server running on port ${PORT}`);
+  });
 });

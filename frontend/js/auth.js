@@ -32,7 +32,9 @@ function renderHeaderUser(user) {
 
   if (user) {
     // Check if admin is active, if so provide links
-    const adminLink = "";
+    const adminLink = user.is_admin
+  ? `<a href="/admin" class="btn-admin">Admin Panel</a>`
+  : "";
 
     container.innerHTML = `
       <div class="user-profile-menu">

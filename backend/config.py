@@ -13,9 +13,16 @@ class Config:
     GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
     
     # Whitelist of Admin Emails
-    # We always whitelist the default user and sff6214@gmail.com
-    ADMIN_EMAILS = [
-        "sff6214@gmail.com",
-        "admin@beautyhub.com",
-        "beautyhub.admin@gmail.com"
-    ]
+    # Supports both the built-in defaults and an optional comma-separated ADMIN_EMAILS env var.
+    def _get_admin_emails():
+        configured = os.environ.get("ADMIN_EMAILS", "")
+        configured_emails = [email.strip().lower() for email in configured.split(",") if email.strip()]
+        defaults = [
+            "sff6214@gmail.com",
+            "spiderfx818@gmail.com",
+            "admin@beautyhub.com",
+            "beautyhub.admin@gmail.com",
+        ]
+        return list(dict.fromkeys(defaults + configured_emails))
+
+    ADMIN_EMAILS = _get_admin_emails()
